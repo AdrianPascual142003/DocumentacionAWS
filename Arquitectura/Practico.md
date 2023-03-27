@@ -609,3 +609,321 @@ Puede elegir actualizar  de manera ocasional para ver la pantalla más actualiza
 Seleccione  App Server (Servidor de aplicaciones).
 Copie la dirección IP pública IPv4 de la pestaña Description (Descripción).
 Abra una nueva pestaña del navegador web con esa dirección IP.
+
+# Automatización de servicios
+
+## Implementar una capa de red
+
+Se trata de una recomendación de las prácticas recomendadas para implementar una infraestructura en capas. Las capas comunes son las siguientes:
+
+Red (Amazon VPC)
+Base de datos
+Aplicación
+
+De esta forma, las plantillas se pueden volver a utilizar entre sistemas. Por ejemplo, puede implementar una topología de red común entre entornos de desarrollo, pruebas y producción, o implementar una base de datos estándar para varias aplicaciones.
+
+En esta tarea, implementará una plantilla de AWS **CloudFormation** que crea una capa de redes a través de Amazon VPC.
+
+Haga clic derecho en el siguiente enlace y descargue la plantilla lab-network.yaml en su equipo.
+
+Si desea ver cómo se definen los recursos de AWS, puede abrir la plantilla en un editor de texto.
+
+Las plantillas se pueden escribir en el lenguaje de notación de objetos JavaScript (JSON) o YAML Ain't Markup Language (YAML). YAML es un lenguaje de marcado similar a JSON, pero es más fácil de leer y editar.
+
+En la consola de administración de AWS, encontrará el menú Services (Servicios), donde debe seleccionar CloudFormation.
+
+Si ve este mensaje, haga clic en Try it out now and provide us feedback (Pruébelo ahora y envíenos sus comentarios):
+
+**Nueva consola**
+
+Elija Create stack (crear pila) y configure estos ajustes.
+
+**Paso 1: Especificar la plantilla**
+
+    Template source (Origen de la plantilla): Upload a template file (Cargar un archivo de plantilla)
+    Upload a template file (Cargar un archivo de plantilla): haga clic en Choose file (Elegir archivo) y seleccione el archivo lab-network.yaml que descargó.
+    Elija Next (Siguiente).
+
+**Paso 2: Crear pila**
+    Stack name (Nombre de la pila): lab-network
+    Elija Next (Siguiente).
+
+**Paso 3: Configurar las opciones de la pila**
+
+    En la sección Tags (Etiquetas), escriba estos valores.
+        Key (Clave): application
+        Value (Valor): inventory
+
+    Elija Next (Siguiente).
+
+**Paso 4: Revisar lab-network**
+
+    Elija Create stack (crear pila).
+
+AWS CloudFormation ahora utilizará la plantilla para generar un pila de recursos en la cuenta de AWS.
+
+Las etiquetas especificadas se propagan automáticamente a los recursos que se crean, lo que facilita la identificación de los recursos utilizados por las aplicaciones particulares.
+
+Haga clic en la pestaña Stack info (Información de la pila).
+
+Espere a que **Status** (estado) cambie a **CREATE_COMPLETE.**
+
+Si es necesario, haga clic en Refresh (Actualizar) cada 15 segundos para actualizar la pantalla.
+
+A partir de ahora, puede examinar los recursos que se crearon.
+
+Elija la pestaña Resources (Recursos).
+
+Verá una lista de los recursos creados por la plantilla.
+
+Si la lista está vacía, actualice la lista seleccionando Refresh (Actualizar).
+
+Haga clic en la pestaña **Events** (Eventos) y desplácese a través del registro de eventos.
+
+El registro de eventos muestra (desde los eventos más recientes a los menos recientes) las actividades realizadas por AWS CloudFormation. Algunos ejemplos incluyen empezar a crear un recurso y, luego, completar la creación. Todo error que se produzca durante la creación de la pila se mostrará en esta pestaña.
+
+Elija la pestaña **Outputs** (Resultados).
+
+Una pila de CloudFormation puede proporcionar información de los resultados, como el ID de los recursos específicos y enlaces a los recursos.
+
+Se enumeran dos resultados.
+
+    PublicSubnet: El ID de la subred pública que se creó (por ejemplo: _subnet-08aafd57f745035f1__
+    VPC: El ID de la VPC que se creó (por ejemplo: vpc-08e2b7d1272ee9fb4)
+
+Los resultados también se pueden utilizar para proporcionar valores a otras pilas. Esto se muestra en la columna Export name (Nombre de exportación). En este caso, la VPC y los ID de subred reciben nombres de exportación para que otras pilas puedan recuperar los valores. Estas otras pilas pueden crear recursos dentro de la VPC y la subred que se acaban de crear. Utilizará estos valores en la siguiente tarea.
+
+Elija la pestaña **Template** (Plantilla).
+
+Esta pestaña muestra la plantilla que se utilizó para crear la pila, es decir, la plantilla que cargó mientras creaba la pila. Examine la plantilla y vea los recursos que se crearon. También explore la sección Outputs (Resultados) al final (esta sección define qué valores exportar).
+
+## Implementar una capa de aplicación
+
+Ahora que ha implementado la capa de red, ha llegado el momento de implementar una capa de aplicación que contenga una instancia de Amazon Elastic Compute Cloud (Amazon EC2) y un grupo de seguridad.
+
+La plantilla de AWS CloudFormation importará la VPC y los ID de subred desde la sección Outputs (Resultados) de la pila de CloudFormation existente. A continuación, utilizará esta información para crear el grupo de seguridad en la VPC y la instancia EC2 en la subred.
+
+Haga clic derecho en el siguiente enlace y descargue la plantilla en su equipo: lab-application.yaml
+
+Si desea ver cómo se definen los recursos, puede abrir la plantilla en un editor de texto.
+
+En el panel de navegación izquierdo, elija Stacks (Pilas).
+
+Seleccione Create stack > With new resources (standard) (Crear pila > Con nuevos recursos [estándar]), y, a continuación, configure estos ajustes.
+
+**Paso 1:** **Especificar la plantilla**
+
+    Template source (Origen de la plantilla): Upload a template file (Cargar un archivo de plantilla)
+    Upload a template file (Cargar un archivo de plantilla): Haga clic en Choose file (Seleccionar archivo) y seleccione el archivo lab-application.yaml que descargó.
+    Elija Next (Siguiente)
+
+**Paso 2: Crear pila**
+
+    Stack name (Nombre de la pila): lab-application
+    NetworkStackName (Nombre de la pila de red): lab-network
+    Seleccione Next (Siguiente)
+
+El parámetro **Network Stack Name** (Nombre de la pila de red) indica a la plantilla el nombre de la pila que creó primero (lab-network) para que esta pueda recuperar los valores de la sección Outputs (Resultados).
+
+**Paso 3:** **Configurar las opciones de la pila**
+
+    En la sección Tags (Etiquetas), escriba estos valores.
+    Key (clave): application
+    Value (valor): inventory
+    Seleccione Next (Siguiente)
+
+**Paso 4: Revisar la aplicación de laboratorio**
+
+    Haga clic en Create stack (Crear pila)
+
+Mientras se está creando la pila, examine los detalles en la pestaña Events (Eventos) y en la pestaña Resources (Recursos). Puede monitorear el progreso del proceso de creación de recursos y el estado del recurso.
+
+En la pestaña Stack info (Información de la pila), espere a que Status (Estado) cambie a *CREATE_COMPLETE.*
+
+La aplicación ya está lista.
+
+Elija la pestaña **Outputs** (Resultados).
+
+Copie la URL que se muestra y, a continuación, abra una nueva pestaña del navegador web, pegue la URL y presione INTRO.
+
+La pestaña del navegador abrirá la aplicación, que se está ejecutando en el servidor web que creó esta nueva pila de **CloudFormation**.
+
+Una pila de CloudFormation puede utilizar valores de referencia de otra pila de CloudFormation. Por ejemplo, esta parte de la plantilla lab-application hace referencia a la plantilla lab-network:
+
+```bash
+    WebServerSecurityGroup:
+
+    Type: AWS::EC2::SecurityGroup
+
+    Properties:
+
+        GroupDescription: Enable HTTP ingress
+
+        VpcId:
+
+        Fn::ImportValue:
+
+            !Sub ${NetworkStackName}-VPCID
+```
+
+La última línea utiliza el nombre de pila de red que proporcionó (lab-network) cuando se creó la pila. Importa el valor de lab-network-VPCID desde Outputs (Resultados) de la primera pila. A continuación, inserta el valor en el campo del ID de VPC de la definición del grupo de seguridad. El resultado es que el grupo de seguridad se crea en la VPC creada por la primera pila.
+
+Este es otro ejemplo, que está en la plantilla CloudFormation que acaba de utilizar para crear la pila de aplicaciones. Este código de plantilla coloca la instancia EC2 en la subred creada por la pila de red:
+```bash
+    SubnetId:
+
+    Fn::ImportValue:
+
+    !Sub ${NetworkStackName}-SubnetID
+```
+
+Toma el ID de subred de la pila lab-network (red del laboratorio) y lo utiliza en la pila lab-application (aplicación del laboratorio) para lanzar la instancia en la subred pública que creó la primera pila.
+
+## Actualizar una pila
+
+AWS CloudFormation también puede actualizar una pila que se ha implementado. Cuando actualiza una pila, AWS CloudFormation solo modificará o reemplazará los recursos que se están modificando. Cualquier recurso que no modifique quedará como está.
+
+En esta tarea, actualizará la pila lab-application (aplicación del laboratorio) para modificar un parámetro en el grupo de seguridad.
+
+En primer lugar, deberá examinar la configuración actual en el grupo de seguridad.
+
+En la consola de administración de AWS, encontrará el menú **Services** (Servicios), donde debe elegir **EC2**.
+
+En el panel de navegación izquierdo, elija Security Groups (Grupos de seguridad).
+
+Elija la casilla de **verificación** de lab-application-WebServerSecurityGroup....
+
+Elija la pestaña **Inbound rules** (Reglas de entrada).
+
+El grupo de seguridad actualmente solo tiene una regla. La regla permite el tráfico HTTP.
+
+Ahora volverá a AWS **CloudFormation** para actualizar la pila.
+
+En el menú **Services** (Servicios), elija CloudFormation.
+
+Haga clic derecho en este enlace y descargue la plantilla actualizada lab-application2.yaml en su equipo.
+
+Esta plantilla tiene una configuración adicional para permitir el tráfico entrante de Secure Shell (SSH) en el puerto 22:
+
+    - IpProtocol: tcp
+
+    FromPort: 22
+
+    ToPort: 22
+
+    CidrIp: 0.0.0.0/0
+
+En la lista Stacks (Pilas) de la consola de AWS CloudFormation, elija lab-application.
+
+Elija **Update** (Actualizar) y configure estos ajustes.
+
+    Elija Replace current template (Reemplazar plantilla actual).
+    Template source (Origen de la plantilla): Upload a template file (Cargar un archivo de plantilla)
+    Upload a template file (Cargar un archivo de plantilla): Haga clic en Choose file (Elegir archivo) y seleccione el archivo lab-application2.yaml que descargó.
+
+Elija **Next** (Siguiente) en cada una de las tres pantallas siguientes para avanzar a la página Review lab-application (Revisar lab-application).
+
+En la sección Change set preview (Vista previa del conjunto de cambios) de la parte inferior de la página, AWS CloudFormation muestra los recursos que se actualizarán
+
+Vista previa del conjunto de cambios
+
+Esta vista previa del conjunto de cambios indica que AWS CloudFormation modificará WebServerSecurityGroup sin necesidad de reemplazarlo (Replacement = False). Este conjunto de cambios significa que al grupo de seguridad se le aplicará un cambio menor y que no será necesario cambiar ninguna referencia al grupo de seguridad.
+
+Elija **Update stack** (Actualizar pila).
+
+En la pestaña Stack info (Información de la pila), espere a que Status (Estado) cambie a UPDATE_COMPLETE.
+
+Si es necesario, seleccione **Refresh** (Actualizar) cada 15 segundos para actualizar el estado.
+
+A partir de ahora, puede **verificar el cambio**.
+
+Regrese a la consola de Amazon EC2 y, en el panel de navegación izquierdo, seleccione Security Groups (Grupos de seguridad).
+
+En la lista **Security Groups** (Grupos de seguridad), seleccione lab-application-WebServerSecurityGroup.
+
+La pestaña **Inbound rules** (Reglas de entrada) debe mostrar una regla adicional que permita el tráfico SSH a través del puerto TCP 22.
+
+Esta subtarea demuestra cómo se pueden implementar los cambios en un proceso repetible y documentado. Las plantillas de AWS CloudFormation se pueden almacenar en un repositorio de código fuente (como AWS CodeCommit). De esta manera, puede mantener versiones y un historial de las plantillas y la infraestructura que se implementó.
+
+## Explorar las plantillas con AWS CloudFormation Designer
+
+AWS CloudFormation Designer es una herramienta gráfica para crear, ver y modificar plantillas de AWS CloudFormation. Con Designer, puede diagramar los recursos de la plantilla mediante una interfaz que permite arrastrar y soltar y, a continuación, editar su información a través del editor JSON y YAML integrado.
+
+Independientemente de si es un usuario principiante o avanzado de AWS CloudFormation, Designer puede ayudarlo a ver rápidamente la interrelación entre los recursos de una plantilla. También le permite modificar plantillas fácilmente.
+
+En esta tarea, obtendrá experiencia práctica con **Designer**.
+
+En el menú **Services** (Servicios), elija **CloudFormation**.
+
+En el panel de navegación izquierdo, elija **Designer**.
+
+Sugerencia: Es posible que necesite expandir el panel de navegación con un clic en el ícono de menú.
+
+Seleccione el menú **File** (Archivos), seleccione **Open > Local file** (Abrir > Archivo local) y seleccione la plantilla lab-application2.yaml que descargó previamente.
+
+Designer mostrará una representación gráfica de la plantilla:
+
+**CloudFormation Designer**
+
+En lugar de diagramar una arquitectura típica, Designer es un editor visual para plantillas de AWS CloudFormation, por lo que diseña los recursos definidos en una plantilla y sus relaciones entre sí.
+
+Experimente con las características de Designer. Algunas de las cosas que puede intentar son estas:
+
+    Haga clic en los recursos en pantalla. El panel inferior mostrará, a continuación, la parte de la plantilla que define los recursos.
+    Intente arrastrar un nuevo recurso, desde el panel Resource types (Tipos de recursos) de la izquierda, hasta el área de diseño. La definición del recurso se insertará automáticamente en la plantilla.
+    Pruebe arrastrar los círculos conectores de recursos para crear relaciones entre los recursos.
+    Abra la plantilla lab-network.yaml que descargó anteriormente en el laboratorio y explore sus recursos en Designer.
+
+## Eliminar la pila
+
+Cuando los recursos ya no son necesarios, AWS CloudFormation puede eliminar aquellos creados para la pila.
+
+También se puede especificar una política de eliminación (deletion policy) en relación con los recursos. Puede conservar o (en algunos casos) hacer una copia de seguridad de un recurso cuando se elimina su pila. Esta característica es útil para conservar bases de datos, volúmenes de disco o cualquier recurso que pueda ser necesario después de eliminar la pila.
+
+La pila lab-application se configuró para tomar una instantánea de un volumen de disco de Amazon Elastic Block Store (Amazon EBS) antes de que se elimine. El código de la plantilla que hace posible esta configuración es el siguiente:
+
+```bash
+DiskVolume:
+
+Type: AWS::EC2::Volume
+
+Properties:
+
+    Size: 100
+
+    AvailabilityZone: !GetAtt WebServerInstance.AvailabilityZone
+
+    Tags:
+
+    - Key: Name
+
+        Value: Web Data
+
+DeletionPolicy: Snapshot
+```
+
+El campo **DeletionPolicy** (Política de eliminación) en la línea final dirige a AWS CloudFormation a crear una instantánea del volumen de disco antes de que se elimine.
+
+Ahora, **eliminará** la pila lab-application y veremos los resultados de esta política de eliminación.
+
+Vuelva a la consola principal de AWS CloudFormation seleccionando el enlace **Close** (Cerrar) en la parte superior de la página de Designer (seleccione **Leave page** [Abandonar la página] si se le solicita).
+
+**En la lista de pilas, elija el enlace lab-application.**
+
+Seleccione **Delete** (Eliminar).
+
+Seleccione **Delete stack** (Eliminar pila).
+
+Puede monitorear el proceso de eliminación en la pestaña Events (Eventos) y actualizar la pantalla seleccionando Refresh (Actualizar) ocasionalmente. También puede ver una entrada del registro de eventos que indica que se está creando la instantánea de EBS.
+
+Espere a que se elimine la pila. Desaparecerá de la lista de pilas.
+
+Se eliminó la pila de aplicaciones __, pero la pila de red permaneció intacta. Este caso refuerza la idea de que diferentes equipos (por ejemplo, el equipo de red o el equipo de aplicaciones) podrían administrar sus propias pilas.
+
+Ahora comprobará que se creó una instantánea del volumen de EBS antes de que se eliminara el volumen de EBS.
+
+En el menú **Services** (Servicios), seleccione **EC2**.
+
+En el panel de navegación izquierdo, seleccione **Snapshots** (Instantáneas).
+
+Debería ver una instantánea con un tiempo de inicio en los últimos minutos.
